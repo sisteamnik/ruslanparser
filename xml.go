@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+type Records struct {
+	XMLName xml.Name `xml:"records"`
+	Records []Result `xml:"record"`
+}
+
 type Result struct {
 	XMLName             xml.Name            `xml:"record"`
 	BibliographicRecord BibliographicRecord `xml:"bibliographicRecord"`
@@ -230,8 +235,8 @@ func getSeries(r Result) string {
 }
 
 func getPlaces(r Result) []Place {
-	f := r.HoldingsData.HoldingsAndCirc
 	var res = []Place{}
+	f := r.HoldingsData.HoldingsAndCirc
 	for _, v := range f {
 		var p Place
 		p.Available = v.CirculationData.CircRecord.AvailableNow
