@@ -87,6 +87,16 @@ func (r Result) ToBook() Book {
 	b.Places = getPlaces(r)
 	b.LastMod = getLastMod(r)
 	b.SourceId = getSourceId(r)
+	b.Fields = map[string]map[string]string{}
+
+	for _, v := range r.BibliographicRecord.Record.Field {
+		if b.Fields[v.Id] == nil {
+			b.Fields[v.Id] = map[string]string{}
+		}
+		for _, j := range v.Subfield {
+			b.Fields[v.Id][j.Id] = j.Val
+		}
+	}
 	return b
 }
 
@@ -132,35 +142,13 @@ func getAuthor(r Result) string {
 }
 
 func getPublicationYear(r Result) int {
-	f := r.BibliographicRecord.Record.Field
-	for _, v := range f {
-		if v.Id == "210" {
-			for _, k := range v.Subfield {
-				if k.Id == "d" {
-					i, _ := strconv.Atoi(k.Val)
-					return i
-				}
-			}
-		}
-	}
-	return 0
+	y := r.getSubfield("210", "d")
+	i, _ := strconv.Atoi(y)
+	return i
 }
 
 func getCity(r Result) string {
-	f := r.BibliographicRecord.Record.Field
-	for _, v := range f {
-		if v.Id == "210" {
-			for _, k := range v.Subfield {
-				if k.Id == "a" {
-					if k.Val == "М." {
-						k.Val = "Москва"
-					}
-					return k.Val
-				}
-			}
-		}
-	}
-	return ""
+	return r.getSubfield("210", "a")
 }
 
 func getTags(r Result) []string {
@@ -221,11 +209,15 @@ func getEdition(r Result) string {
 }
 
 func getSeries(r Result) string {
+	return r.getSubfield("200", "e")
+}
+
+func (r Result) getSubfield(fId, sId string) string {
 	f := r.BibliographicRecord.Record.Field
 	for _, v := range f {
-		if v.Id == "200" {
+		if v.Id == fId {
 			for _, k := range v.Subfield {
-				if k.Id == "e" {
+				if k.Id == sId {
 					return k.Val
 				}
 			}
