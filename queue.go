@@ -53,6 +53,12 @@ func NewWorker(id int, q *Queue) *Worker {
 }
 
 func (w *Worker) Run() {
+	go func() {
+		for {
+			w.Session()
+			time.Sleep(9 * time.Minute)
+		}
+	}()
 	for cmd := range w.queue.cmdChan {
 		w.Do(cmd)
 		if cmd.IsWait() {
@@ -68,7 +74,13 @@ func (w *Worker) Session() (string, error) {
 	if w.Ssid != "" && time.Since(w.SsidFetch) < 5*time.Minute {
 		return w.Ssid, nil
 	}
-	return NewSessionSearchUrl(w.queue.BaseUrl + "?" + w.queue.IndexQuery)
+	ssid, e := NewSessionSearchUrl(w.queue.BaseUrl + "?" + w.queue.IndexQuery)
+	if e != nil {
+		return ssid, e
+	}
+	w.Ssid = ssid
+	w.SsidFetch = time.Now()
+	return w.Ssid, nil
 }
 
 func (w *Worker) Do(cmd *Cmd) {
@@ -77,7 +89,7 @@ func (w *Worker) Do(cmd *Cmd) {
 		if e == nil {
 			return
 		} else {
-			fmt.Println("NOT  HACHED")
+			fmt.Println("NOT  CACHED")
 		}
 	}
 	fmt.Println(w.Id, "here", "cmd", cmd.Query)
